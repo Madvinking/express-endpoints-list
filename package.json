@@ -1,6 +1,6 @@
 {
   "name": "express-endpoints-list",
-  "version": "0.2.0",
+  "version": "0.0.1",
   "description": "return all express endpoints route or not ",
   "main": "src/index.js",
   "files": [

@@ -1,120 +1,95 @@
-# yarn-isolate-workspace
+# express-endpoints-list
 
-![npm](https://img.shields.io/npm/v/yarn-isolate-workspace)
+![npm](https://img.shields.io/npm/v/express-endpoints-list)
 
-**Isolate a workspace in yarn workspaces project**
-when working in yarn workspaces environment
-sometimes some workspaces depend on other workspaces.
-this behavior makes it hard to prepare a workspace for a production environment,
-since we need to copy all related workspaces along with it.
+- return all express registered endpoints with their handlers.
+- works on express router instance and sub express routers.
+- configurable.
 
-This tool helps you isolate the workspace.
-It will copy all related workspaces to a destination folder under the workspace.
-And will make it a root workspace to all the other copied workspaces.
-that way, you end up with an isolated project that has everything it needs under one folder
+## Example
 
-### motivation
-using CI/CD to get your project ready for production is extremely tricky with monorepos.
-When your monorepo gets too big, and you want to dockerized each service independently,
-you want to prevent your docker context scope from the root of the monorepo.
-And make the scope for the folder of your workspace/project/service folder.
-To achieve it, you need to copy all project dependence workspaces to this folder.
-
-
-### example
-if we have a monorepo workspaces tree that looks like this:
 ```
-├── workspace-1
-├   ├── package.json
-├   ├── src-code
-├── workspace-2
-├   ├── package.json
-├   ├── src-code
-├── package.json
-├── .yarnrc
-├── yarn.lock
-```
-and workspace-1 depend on workspace-2
-after running
-`npx yarn-isolate-workspace workspace-1`
-the tree will look like this:
-```
-├── workspace-1
-    ├── _isolated_
-        ├── workspaces
-            ├── workspace-2
-                ├── package.json
-                ├── src-code
-        ├── workspaces-src-less
-            ├── workspace-2
-                ├── package.json
-        ├── workspaces-src-less-prod
-            ├── workspace-2
-                ├── package.json
-        ├── package.json
-        ├── package-prod.json
-        ├── .yarnrc
-        ├── .yarn.lock
-    ├── package.json
-    ├── src-code
-├── workspace-2
-    ├── package.json
-    ├── src-code
-├── package.json
-├── .yarnrc
-├── .yarn.lock
-```
+  const express = require('express');
+  const getEndpoints = require('express-endpoints-list');
 
-### what did you get?
-the tool created a folder (with default name _isolated_)
-this folder contains:
-  1. `workspaces` folder - include all the related workspaces and their source code (in the example workspace 2)
-  2. `workspaces-src-less` folder - contain all related workspaces by only package.json files.
-*** a folder contains all the workspaces package.json (same tree as the workspaces folder).
-Usually, when building an image with docker, you want to take advantage of the Docker cache layering.
-And to do so, you want to copy all package.json before copying all source code. To create a layer
-for all the node_modules. This folder contains only those pacakge.json,
-so instead of COPY all package.json one by one, you can COPY this all folder.
-  3. `workspaces-src-less-prod` folder - contain all related workspaces that are not in devDependencies and
-*** same as the previous folder but each package.json filters out the devDependencis.
-same as before if you run yarn install with the --prod flag
-  4. `package.json` file - duplication of the main package.json just with an extra key: `workspaces.`
-     and all related workspaces are listed there so it could resolve them.
-  5. `package-prod.json` file - duplication of the main package.json just with an extra key: `workspaces.`
-     and without the devDependencies.
-  6. `.yarnrc` - copy if the root scope .yarnrc if exist if not generate the file with workspaces enable flag
-  7. `yarn.lock` - if there is a 'yarn.lock' file in the root of the project,
-     it will copy all relevant dependencies from it
+  const app = express();
+  const bodyParserMiddleware = bodyParser.json({});
 
-## Supported cli flags:
-we can configure the behavior of the isolated script with some params
-you want to make sure you treat the depended workspaces as 'installed modules' so filter out from them
-their dev-dependencies and test files.
-```
-  #### yarn-isolate [options] [workspace name to isolate]
-    [--yarnrc-disable]                     disable copy or generate .yarnrc file
-    [--yarnrc-generate]                    generate yarnrc (instaed of copy the existing one)
-    [--yarn-lock-disable]                  disable generate yarn.lock file
+  const router1 = express.Router();
+  const router2 = express.Router();
+  const router3 = express.Router();
+  const router4 = express.Router();
+  const router5 = express.Router();
 
-    [--src-less-disable]                   disable create of the src-less folders
-    [--src-less-glob={value}]              glob pattern to include files with the src-less folder
+  app.get('/path1', bodyParserMiddleware, anonymousFunction);
+  app.put('/path2', path2Handler1, path2Handler2);
+  app.post('/path3/:param1/:param2', anonymousFunction);
+  app.all('/path4', anonymousFunction);
+  app.use(bodyParserMiddleware);
+  app.use(anonymousFunction);
 
-    [--src-less-prod-disable]              disable create the prod src-less folder
-    [--src-less-prod-glob={value}]         glob pattern to include files with the src-less-prod folder
+  router1.get('/path5', anonymousFunction);
+  app.use(router1);
+  router2.post('/path7', anonymousFunction);
+  app.get('/path6', router2);
+  router3.all('/path8', anonymousFunction);
+  app.use(router3);
+  router5.delete('/path11', anonymousFunction);
+  router4.get('/path10', router5);
+  app.put('/path9', router4);
 
-    [--json-file-disable]                  disable create json file
-    [--json-file-prod-disable]             disable create json prod json file
-    [--output-folder]                      folder to create all generated files (default to _isolated_)
-
-    [--src-files-enable]                   copy all src file of main workspace to the isolated folder
-    [--src-files-exclude-glob={value}]     glob pattern to exclude files from the main workspace copied files
-    [--src-files-include-glob={value}]     glob pattern to include files from the main workspace copied files
-    [--workspaces-exclude-glob={value}]    glob pattern to exclude files when copy workspaces
-
-    [--max-depth]                          by default we search recursively project-root 5 folder
-    [--project-folder={value}]             absolute path to project-root (default will look for the root)
+  cosnt endpoints = getEndpoints(app, {options}); // options is optional
+  console.log(endpoints);
+  //
+[
+  {
+    path: '/path1',
+    handle: [bodyParserMiddleware, anonymousFunction],
+    method: 'get',
+  },
+  {
+    path: '/path2',
+    handle: [path2Handler1, path2Handler2],
+    method: 'put',
+  },
+  {
+    path: '/path3/:param1/:param2',
+    handle: [anonymousFunction],
+    method: 'post',
+  },
+  // on each express supported method:
+  ...allMethods.map(method => ({
+    path: '/path4',
+    handle: [anonymousFunction],
+    method: method.toLowerCase(),
+  })),
+  {
+    path: '/path5',
+    handle: [anonymousFunction],
+    method: 'get',
+  },
+  {
+    path: '/path6/path7',
+    handle: [anonymousFunction],
+    method: 'post',
+  },
+  // on each express supported method:
+  ...allMethods.map(method => ({
+    path: '/path8',
+    handle: [anonymousFunction],
+    method: method.toLowerCase(),
+  })),
+  {
+    path: '/path9/path10/path11',
+    handle: [anonymousFunction],
+    method: 'delete',
+  },
+]
 ```
 
-* `--src-less-glob/--src-less-prod-glob` - if you have bin files or any other files, you need to run yarn install in the workspace. For example, one of our workspaces have a bin script that warps lint command.
-* `--src-files-enable` - in case you want to create docker context of the isolated folder.
-* `--workspaces-exclude-glob` - filter files from workspaces you don't need test folders, etc.
+### options
+
+- handlers: (default true), - add handles functions to the list
+- mergeHandlers (default false) - all handles for same path and method will be in array of handles.
+- middlewares: (default false) - list also middlewares.
+- params: (default false) - in case of using express params middleware.

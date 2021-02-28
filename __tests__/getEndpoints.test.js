@@ -50,49 +50,41 @@ const routes = [
   {
     path: '/path1',
     handle: [bodyParserMiddleware, anonymousFunction],
-    params: undefined,
     method: 'get',
   },
   {
     path: '/path2',
     handle: [path2Handler1, path2Handler2],
-    params: undefined,
     method: 'put',
   },
   {
     path: '/path3/:param1/:param2',
     handle: [anonymousFunction],
-    params: undefined,
     method: 'post',
   },
   ...allMethods.map(method => ({
     path: '/path4',
     handle: [anonymousFunction],
-    params: undefined,
     method: method.toLowerCase(),
   })),
   {
     path: '/path5',
     handle: [anonymousFunction],
-    params: undefined,
     method: 'get',
   },
   {
     path: '/path6/path7',
     handle: [anonymousFunction],
-    params: undefined,
     method: 'post',
   },
   ...allMethods.map(method => ({
     path: '/path8',
     handle: [anonymousFunction],
-    params: undefined,
     method: method.toLowerCase(),
   })),
   {
     path: '/path9/path10/path11',
     handle: [anonymousFunction],
-    params: undefined,
     method: 'delete',
   },
 ];
@@ -113,7 +105,6 @@ describe('express list endpoints', () => {
     const middlewaresRoute = {
       path: '',
       handle: [],
-      params: undefined,
       method: 'middlewares',
     };
     const endpoints = getEndpoints(app, { middlewares: true });
